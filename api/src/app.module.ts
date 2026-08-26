@@ -8,6 +8,7 @@ import { GatewayAccountsModule } from './modules/gateway-accounts/gateway-accoun
 import { OrdersModule } from './modules/orders/orders.module';
 import { TransactionModule } from './modules/transaction/transaction.module';
 import { UsersModule } from './modules/users/users.module';
+import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UsersModule } from './modules/users/users.module';
     CheckoutLinksModule,
     OrdersModule,
     TransactionModule,
+    WithdrawalsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
