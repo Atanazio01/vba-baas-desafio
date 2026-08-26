@@ -1,0 +1,5 @@
+export enum TransactionType {
+  PAYMENT_PIX = 'PAYMENT_PIX',
+  PAYMENT_CARD = 'PAYMENT_CARD',
+  WITHDRAWAL = 'WITHDRAWAL',
+}

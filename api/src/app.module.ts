@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { CheckoutLinksModule } from './modules/checkout-links/checkout-links.module';
 import { GatewayAccountsModule } from './modules/gateway-accounts/gateway-accounts.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { TransactionModule } from './modules/transaction/transaction.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -14,6 +15,7 @@ import { UsersModule } from './modules/users/users.module';
     GatewayAccountsModule,
     CheckoutLinksModule,
     OrdersModule,
+    TransactionModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
