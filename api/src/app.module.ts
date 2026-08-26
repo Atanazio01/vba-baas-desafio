@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CheckoutLinksModule } from './modules/checkout-links/checkout-links.module';
 import { GatewayAccountsModule } from './modules/gateway-accounts/gateway-accounts.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -10,6 +11,7 @@ import { UsersModule } from './modules/users/users.module';
   imports: [
     UsersModule,
     GatewayAccountsModule,
+    CheckoutLinksModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
