@@ -1,4 +1,4 @@
-export enum CheckoutLinkStatus {
+export enum PaymentStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   DENIED = 'DENIED',

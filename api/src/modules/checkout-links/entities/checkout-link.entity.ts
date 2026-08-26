@@ -7,9 +7,9 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { PaymentStatus } from '../../../shared/enums/payment-status.enum';
 import { User } from '../../users/entities/user.entity';
 import { PaymentMethod } from '../enums/payment-method.enum';
-import { CheckoutLinkStatus } from '../enums/status.enum';
 
 @Entity('checkout_links')
 export class CheckoutLink {
@@ -35,8 +35,8 @@ export class CheckoutLink {
   @Column({ type: 'enum', enum: PaymentMethod })
   method!: PaymentMethod;
 
-  @Column({ type: 'enum', enum: CheckoutLinkStatus })
-  status!: CheckoutLinkStatus;
+  @Column({ type: 'enum', enum: PaymentStatus })
+  status!: PaymentStatus;
 
   @Column({
     name: 'fee_percent',
