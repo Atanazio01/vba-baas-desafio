@@ -3,9 +3,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { GatewayAccountsModule } from './modules/gateway-accounts/gateway-accounts.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
+    UsersModule,
+    GatewayAccountsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
