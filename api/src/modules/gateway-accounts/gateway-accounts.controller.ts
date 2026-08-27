@@ -1,9 +1,12 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ActiveUserId } from '../../shared/decorators/active-user-id.decorator';
 import { ConnectGatewayDto } from './dto/connect-gateway.dto';
 import { RegisterGatewayUserDto } from './dto/register-gateway-user.dto';
 import { GatewayAccountsService } from './gateway-accounts.service';
 
+@ApiTags('Gateway Accounts')
+@ApiBearerAuth()
 @Controller('gateway-accounts')
 export class GatewayAccountsController {
   constructor(private readonly service: GatewayAccountsService) {}

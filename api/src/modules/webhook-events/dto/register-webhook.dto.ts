@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEnum,
   IsNotEmpty,
@@ -8,12 +9,23 @@ import {
 import { TransactionType } from '../../../shared/enums/transaction-type.enum';
 
 export class RegisterWebhookDto {
+  @ApiProperty({
+    enum: TransactionType,
+    example: TransactionType.PAYMENT_PIX,
+  })
   @IsEnum(TransactionType)
   event!: TransactionType;
 
-  @IsUrl({ require_tld: false }) // false = aceita ngrok / localhost em dev
+  @ApiProperty({
+    example: 'https://seu-ngrok.ngrok-free.dev/webhooks/lera-box/pix',
+  })
+  @IsUrl({ require_tld: false })
   url!: string;
 
+  @ApiPropertyOptional({
+    example: 'mesmo-valor-do-WEBHOOK_HMAC_SECRET',
+    description: 'Opcional — usa .env se omitir',
+  })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
