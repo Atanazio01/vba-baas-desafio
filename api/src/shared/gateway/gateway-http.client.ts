@@ -52,7 +52,26 @@ export type GatewayLoginResponse = {
 export type GatewayMeResponse = {
   email: string;
   document?: string;
-  // outros campos que o Lera devolver — não precisa tipar tudo
+  // outros campos que o Lera devolver
+};
+
+export type CreatePixPaymentPayload = {
+  amount: number;
+  payerDocument: string;
+  description?: string;
+  externalReference?: string;
+};
+
+export type GatewayPixPaymentResponse = {
+  id?: string;
+  txid?: string;
+  status?: string;
+  emv?: string;
+  qrCodeBase64?: string;
+  qr_code_base64?: string;
+  copyPaste?: string;
+  // ajusta após o 1º response real (como no login)
+  [key: string]: unknown;
 };
 
 @Injectable()
@@ -116,6 +135,25 @@ export class GatewayHttpClient {
     }
   }
 
+  async createPixPayment(
+    accessToken: string,
+    payload: CreatePixPaymentPayload,
+  ): Promise<GatewayPixPaymentResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post<GatewayPixPaymentResponse>(
+          `${this.baseUrl}/payments/pix`,
+          payload,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  // responsável por reverter o erro do gateway para um erro do NestJS
   private rethrow(error: unknown): never {
     if (isAxiosError(error)) {
       const status = error.response?.status;
