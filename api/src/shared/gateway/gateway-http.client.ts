@@ -146,6 +146,23 @@ export type GatewayFeesQuery = {
 
 export type GatewayFeesResponse = unknown; // ajusta no 1º GET real
 
+export type CreateWithdrawalPayload = {
+  amount: number;
+  pixKey: string;
+  document: string;
+  description?: string;
+  externalReference?: string;
+};
+
+export type GatewayWithdrawalResponse = {
+  id?: string;
+  status?: string;
+  amount?: number;
+  externalReference?: string;
+  denialReason?: string | null;
+  [key: string]: unknown;
+};
+
 @Injectable()
 export class GatewayHttpClient {
   private readonly baseUrl: string;
@@ -298,6 +315,41 @@ export class GatewayHttpClient {
         this.http.post<GatewayRegisterWebhookResponse>(
           `${this.baseUrl}/webhooks`,
           payload,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async createWithdrawal(
+    accessToken: string,
+    payload: CreateWithdrawalPayload,
+  ): Promise<GatewayWithdrawalResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post<GatewayWithdrawalResponse>(
+          `${this.baseUrl}/withdrawals`,
+          payload,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async getWithdrawal(
+    accessToken: string,
+    id: string,
+  ): Promise<GatewayWithdrawalResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<GatewayWithdrawalResponse>(
+          `${this.baseUrl}/withdrawals/${id}`,
           { headers: { Authorization: `Bearer ${accessToken}` } },
         ),
       );

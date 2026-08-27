@@ -40,4 +40,13 @@ export class WebhookEventsController {
       signature,
     );
   }
+
+  @IsPublic()
+  @Post('lera-box/withdrawal')
+  receiveWithdrawal(
+    @Body() body: Record<string, unknown>,
+    @Headers('x-lera-box-signature') signature: string | undefined,
+  ) {
+    return this.service.handleWithdrawalIncoming(body, signature);
+  }
 }
