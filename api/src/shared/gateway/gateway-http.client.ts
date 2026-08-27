@@ -117,6 +117,35 @@ export type GatewayWalletResponse = {
   updatedAt: string;
 };
 
+export type CreateCardPaymentPayload = {
+  amount: number;
+  description?: string;
+  externalReference?: string;
+  cardNumber: string;
+  cardHolder: string;
+  expiryMonth: string;
+  expiryYear: string;
+  cvv: string;
+  installments: number;
+  feePercent: number;
+};
+
+export type GatewayCardPaymentResponse = {
+  id?: string;
+  status?: string;
+  amount?: number;
+  feePercent?: number;
+  installments?: number;
+  brand?: string;
+  [key: string]: unknown;
+};
+
+export type GatewayFeesQuery = {
+  brand?: 'VISA' | 'MASTERCARD' | 'ELO';
+};
+
+export type GatewayFeesResponse = unknown; // ajusta no 1º GET real
+
 @Injectable()
 export class GatewayHttpClient {
   private readonly baseUrl: string;
@@ -221,6 +250,37 @@ export class GatewayHttpClient {
             headers: { Authorization: `Bearer ${accessToken}` },
             params: query,
           },
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async getFees(query: GatewayFeesQuery = {}): Promise<GatewayFeesResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<GatewayFeesResponse>(`${this.baseUrl}/fees`, {
+          params: query,
+        }),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async createCardPayment(
+    accessToken: string,
+    payload: CreateCardPaymentPayload,
+  ): Promise<GatewayCardPaymentResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post<GatewayCardPaymentResponse>(
+          `${this.baseUrl}/payments/card`,
+          payload,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
         ),
       );
       return data;

@@ -14,7 +14,7 @@ import { RegisterWebhookDto } from './dto/register-webhook.dto';
 import { WebhookEvent } from './entities/webhook-event.entity';
 import { WebhookProcessingStatus } from './enums/processing-status.enum';
 
-type LeraPixWebhook = {
+type LeraPaymentWebhook = {
   event?: string;
   status?: string;
   transactionId?: string;
@@ -55,7 +55,7 @@ export class WebhookEventsService {
 
   async handleIncoming(
     eventType: TransactionType,
-    body: LeraPixWebhook,
+    body: LeraPaymentWebhook,
     signature: string | undefined,
   ) {
     const externalReference = body.externalReference;
@@ -130,20 +130,25 @@ export class WebhookEventsService {
         await this.linksRepo.save(link);
       }
 
-      await this.txRepo.save(
-        this.txRepo.create({
-          userId: order.userId,
-          orderId: order.id,
-          checkoutLinkId: order.checkoutLinkId,
-          gatewayPaymentId: body.transactionId ?? body.txid ?? null,
-          externalReference,
-          type: eventType,
-          status,
-          amountCents: body.amount ?? order.amountCents,
-          feePercent: null,
-          gatewayPayload: body,
-        }),
-      );
+      const existingTx = await this.txRepo.findOne({
+        where: { externalReference },
+      });
+      if (!existingTx) {
+        await this.txRepo.save(
+          this.txRepo.create({
+            userId: order.userId,
+            orderId: order.id,
+            checkoutLinkId: order.checkoutLinkId,
+            gatewayPaymentId: body.transactionId ?? body.txid ?? null,
+            externalReference,
+            type: eventType,
+            status,
+            amountCents: body.amount ?? order.amountCents,
+            feePercent: link?.feePercent ?? null,
+            gatewayPayload: body,
+          }),
+        );
+      }
 
       event.processingStatus = WebhookProcessingStatus.PROCESSED;
       event.processedAt = new Date();
@@ -162,7 +167,7 @@ export class WebhookEventsService {
   }
 
   private verifySignature(
-    body: LeraPixWebhook,
+    body: LeraPaymentWebhook,
     signature: string | undefined,
   ): boolean {
     const secret = this.config.get<string>('WEBHOOK_HMAC_SECRET');
@@ -170,7 +175,6 @@ export class WebhookEventsService {
       return false;
     }
 
-    // Tentativa comum: HMAC-SHA256(JSON) em hex
     const expected = createHmac('sha256', secret)
       .update(JSON.stringify(body))
       .digest('hex');

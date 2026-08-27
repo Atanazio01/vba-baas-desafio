@@ -27,4 +27,17 @@ export class WebhookEventsController {
       signature,
     );
   }
+
+  @IsPublic()
+  @Post('lera-box/card')
+  receiveCard(
+    @Body() body: Record<string, unknown>,
+    @Headers('x-lera-box-signature') signature: string | undefined,
+  ) {
+    return this.service.handleIncoming(
+      TransactionType.PAYMENT_CARD,
+      body,
+      signature,
+    );
+  }
 }

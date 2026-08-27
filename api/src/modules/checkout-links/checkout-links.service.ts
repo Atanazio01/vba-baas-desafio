@@ -3,9 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import { PaymentStatus } from '../../shared/enums/payment-status.enum';
+import { TransactionType } from '../../shared/enums/transaction-type.enum';
 import { GatewayHttpClient } from '../../shared/gateway/gateway-http.client';
 import { GatewayAccountsService } from '../gateway-accounts/gateway-accounts.service';
 import { Order } from '../orders/entities/order.entity';
+import { Transaction } from '../transaction/entities/transaction.entity';
+import { CreateCardCheckoutDto } from './dto/create-card-checkout.dto';
 import { CreatePixCheckoutDto } from './dto/create-pix-checkout.dto';
 import { CheckoutLink } from './entities/checkout-link.entity';
 import { PaymentMethod } from './enums/payment-method.enum';
@@ -17,16 +20,36 @@ export class CheckoutLinksService {
     private readonly linksRepo: Repository<CheckoutLink>,
     @InjectRepository(Order)
     private readonly ordersRepo: Repository<Order>,
+    @InjectRepository(Transaction)
+    private readonly txRepo: Repository<Transaction>,
     private readonly gatewayAccounts: GatewayAccountsService,
     private readonly gatewayHttp: GatewayHttpClient,
   ) {}
 
+  private async mirrorTransaction(params: {
+    userId: string;
+    orderId: string;
+    checkoutLinkId: string;
+    externalReference: string;
+    gatewayPaymentId: string | null;
+    type: TransactionType;
+    status: PaymentStatus;
+    amountCents: number;
+    feePercent: string | null;
+    gatewayPayload: Record<string, unknown>;
+  }) {
+    const exists = await this.txRepo.findOne({
+      where: { externalReference: params.externalReference },
+    });
+    if (exists) return;
+
+    await this.txRepo.save(this.txRepo.create(params));
+  }
+
   async createPix(userId: string, dto: CreatePixCheckoutDto) {
     const token = await this.gatewayAccounts.getDecryptedToken(userId);
 
-    // gera um ID público para o checkout link, ID usado para acessar o checkout link
     const publicId = randomUUID().replace(/-/g, '').slice(0, 12);
-    // gera um ID externo para o checkout link, ID usado para identificar o pagamento no gateway
     const externalReference = `PIX-${randomUUID()}`;
 
     const link = await this.linksRepo.save(
@@ -79,8 +102,25 @@ export class CheckoutLinksService {
     if (gatewayStatus === PaymentStatus.APPROVED) {
       order.paidAt = new Date();
     }
+
     await this.linksRepo.save(link);
     await this.ordersRepo.save(order);
+
+    if (gatewayStatus === PaymentStatus.APPROVED) {
+      await this.mirrorTransaction({
+        userId,
+        orderId: order.id,
+        checkoutLinkId: link.id,
+        externalReference,
+        gatewayPaymentId: link.gatewayPaymentId,
+        type: TransactionType.PAYMENT_PIX,
+        status: gatewayStatus,
+        amountCents: link.amountCents,
+        feePercent: link.feePercent,
+        gatewayPayload: pix,
+      });
+    }
+
     return {
       id: link.id,
       publicId: link.publicId,
@@ -91,6 +131,98 @@ export class CheckoutLinksService {
       orderId: order.id,
       pixEmv: link.pixEmv,
       pixQrBase64: link.pixQrBase64,
+      gatewayPaymentId: link.gatewayPaymentId,
+      paidAt: order.paidAt,
+    };
+  }
+
+  async createCard(userId: string, dto: CreateCardCheckoutDto) {
+    const token = await this.gatewayAccounts.getDecryptedToken(userId);
+
+    const publicId = randomUUID().replace(/-/g, '').slice(0, 12);
+    const externalReference = `CARD-${randomUUID()}`;
+
+    const link = await this.linksRepo.save(
+      this.linksRepo.create({
+        userId,
+        publicId,
+        externalReference,
+        amountCents: dto.amountCents,
+        method: PaymentMethod.CARD,
+        status: PaymentStatus.PENDING,
+        feePercent: String(dto.feePercent),
+        brand: dto.brand,
+        installments: dto.installments,
+        expiresAt: null,
+        gatewayPaymentId: null,
+        pixEmv: null,
+        pixQrBase64: null,
+      }),
+    );
+
+    const order = await this.ordersRepo.save(
+      this.ordersRepo.create({
+        userId,
+        checkoutLinkId: link.id,
+        externalReference,
+        amountCents: dto.amountCents,
+        status: PaymentStatus.PENDING,
+        paidAt: null,
+      }),
+    );
+
+    const card = await this.gatewayHttp.createCardPayment(token, {
+      amount: dto.amountCents,
+      description: dto.description,
+      externalReference,
+      cardNumber: dto.cardNumber,
+      cardHolder: dto.cardHolder,
+      expiryMonth: dto.expiryMonth,
+      expiryYear: dto.expiryYear,
+      cvv: dto.cvv,
+      installments: dto.installments,
+      feePercent: dto.feePercent,
+    });
+
+    const gatewayPaymentId = card.id ?? null;
+    const gatewayStatus = this.mapGatewayStatus(card.status);
+
+    link.gatewayPaymentId = gatewayPaymentId;
+    link.status = gatewayStatus;
+    order.status = gatewayStatus;
+    if (gatewayStatus === PaymentStatus.APPROVED) {
+      order.paidAt = new Date();
+    }
+
+    await this.linksRepo.save(link);
+    await this.ordersRepo.save(order);
+
+    if (gatewayStatus === PaymentStatus.APPROVED) {
+      await this.mirrorTransaction({
+        userId,
+        orderId: order.id,
+        checkoutLinkId: link.id,
+        externalReference,
+        gatewayPaymentId: link.gatewayPaymentId,
+        type: TransactionType.PAYMENT_CARD,
+        status: gatewayStatus,
+        amountCents: link.amountCents,
+        feePercent: link.feePercent,
+        gatewayPayload: card,
+      });
+    }
+
+    return {
+      id: link.id,
+      publicId: link.publicId,
+      externalReference: link.externalReference,
+      amountCents: link.amountCents,
+      status: link.status,
+      method: link.method,
+      brand: link.brand,
+      installments: link.installments,
+      feePercent: link.feePercent,
+      orderId: order.id,
       gatewayPaymentId: link.gatewayPaymentId,
       paidAt: order.paidAt,
     };
@@ -107,8 +239,15 @@ export class CheckoutLinksService {
       amountCents: link.amountCents,
       status: link.status,
       method: link.method,
-      pixEmv: link.pixEmv,
-      pixQrBase64: link.pixQrBase64,
+      ...(link.method === PaymentMethod.PIX && {
+        pixEmv: link.pixEmv,
+        pixQrBase64: link.pixQrBase64,
+      }),
+      ...(link.method === PaymentMethod.CARD && {
+        brand: link.brand,
+        installments: link.installments,
+        feePercent: link.feePercent,
+      }),
     };
   }
 

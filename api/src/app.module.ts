@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthGuard } from './modules/auth/auth.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { CheckoutLinksModule } from './modules/checkout-links/checkout-links.module';
+import { FeesModule } from './modules/fees/fees.module';
 import { GatewayAccountsModule } from './modules/gateway-accounts/gateway-accounts.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { TransactionModule } from './modules/transaction/transaction.module';
@@ -24,6 +25,7 @@ import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
     WebhookEventsModule,
     AuthModule,
     WalletModule,
+    FeesModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
