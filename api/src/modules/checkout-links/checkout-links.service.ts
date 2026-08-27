@@ -1,15 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
+import { EmailService } from '../../shared/email/email.service';
 import { PaymentStatus } from '../../shared/enums/payment-status.enum';
 import { TransactionType } from '../../shared/enums/transaction-type.enum';
 import { GatewayHttpClient } from '../../shared/gateway/gateway-http.client';
 import { GatewayAccountsService } from '../gateway-accounts/gateway-accounts.service';
 import { Order } from '../orders/entities/order.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
+import { UsersService } from '../users/users.service';
 import { CreateCardCheckoutDto } from './dto/create-card-checkout.dto';
 import { CreatePixCheckoutDto } from './dto/create-pix-checkout.dto';
+import { SendCheckoutEmailDto } from './dto/send-checkout-email.dto';
 import { CheckoutLink } from './entities/checkout-link.entity';
 import { PaymentMethod } from './enums/payment-method.enum';
 
@@ -24,6 +32,9 @@ export class CheckoutLinksService {
     private readonly txRepo: Repository<Transaction>,
     private readonly gatewayAccounts: GatewayAccountsService,
     private readonly gatewayHttp: GatewayHttpClient,
+    private readonly emailService: EmailService,
+    private readonly config: ConfigService,
+    private readonly usersService: UsersService,
   ) {}
 
   private async mirrorTransaction(params: {
@@ -248,6 +259,54 @@ export class CheckoutLinksService {
         installments: link.installments,
         feePercent: link.feePercent,
       }),
+    };
+  }
+
+  private formatAmount(cents: number): string {
+    return (cents / 100).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+  }
+
+  private methodLabel(method: PaymentMethod): string {
+    return method === PaymentMethod.PIX ? 'Pix' : 'Cartão';
+  }
+
+  async sendCheckoutLinkEmail(
+    userId: string,
+    publicId: string,
+    dto: SendCheckoutEmailDto,
+  ) {
+    const link = await this.linksRepo.findOne({ where: { publicId } });
+
+    if (!link) {
+      throw new NotFoundException('Checkout link not found');
+    }
+
+    if (link.userId !== userId) {
+      throw new ForbiddenException('You do not own this checkout link');
+    }
+
+    const user = await this.usersService.getProfile(userId);
+    const frontendUrl = this.config
+      .getOrThrow<string>('FRONTEND_URL')
+      .replace(/\/$/, '');
+    const checkoutUrl = `${frontendUrl}/checkout/${link.publicId}`;
+
+    await this.emailService.sendCheckoutLinkEmail({
+      to: dto.to,
+      checkoutUrl,
+      amountFormatted: this.formatAmount(link.amountCents),
+      method: this.methodLabel(link.method),
+      senderName: user.name,
+      customMessage: dto.message,
+    });
+
+    return {
+      sent: true,
+      to: dto.to,
+      checkoutUrl,
     };
   }
 
