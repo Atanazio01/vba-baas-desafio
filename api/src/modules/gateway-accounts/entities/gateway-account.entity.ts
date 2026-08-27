@@ -8,7 +8,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { PersonType } from '../enums/person-type.enum';
 
 @Entity('gateway_accounts')
 export class GatewayAccount {
@@ -22,9 +21,6 @@ export class GatewayAccount {
   @OneToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user!: User;
-
-  @Column({ name: 'person_type', type: 'enum', enum: PersonType })
-  personType!: PersonType;
 
   @Column({ name: 'gateway_email' })
   gatewayEmail!: string;

@@ -1,0 +1,138 @@
+import { HttpService } from '@nestjs/axios';
+import {
+  BadGatewayException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { isAxiosError } from 'axios';
+import { firstValueFrom } from 'rxjs';
+import { PersonType } from '../../modules/gateway-accounts/enums/person-type.enum';
+
+export type GatewayRegisterPayload = {
+  personType: PersonType;
+  name: string;
+  tradingName?: string;
+  email: string;
+  phone: string;
+  document: string;
+  zipCode: string;
+  address: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+};
+
+type GatewayLoginRaw = {
+  access_token: string;
+  token_type?: string;
+  codigoCliente: number | string;
+  chaveLoja: string;
+  user: {
+    id: string;
+    personType: string;
+    name: string;
+    tradingName?: string;
+    email: string;
+    document: string;
+  };
+};
+
+export type GatewayLoginResponse = {
+  accessToken: string;
+  clientCode: string;
+  storeKey: string;
+  email: string;
+  document: string;
+};
+
+export type GatewayMeResponse = {
+  email: string;
+  document?: string;
+  // outros campos que o Lera devolver — não precisa tipar tudo
+};
+
+@Injectable()
+export class GatewayHttpClient {
+  private readonly baseUrl: string;
+
+  constructor(
+    private readonly http: HttpService,
+    config: ConfigService,
+  ) {
+    this.baseUrl = config.getOrThrow<string>('GATEWAY_BASE_URL');
+  }
+
+  async registerUser(payload: GatewayRegisterPayload) {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post<{ message: string }>(`${this.baseUrl}/users`, payload),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async login(
+    document: string,
+    password: string,
+  ): Promise<GatewayLoginResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post<GatewayLoginRaw>(`${this.baseUrl}/auth/login`, {
+          document,
+          password,
+        }),
+      );
+      if (!data.access_token || !data.codigoCliente || !data.chaveLoja) {
+        throw new BadGatewayException('Unexpected login response from gateway');
+      }
+      return {
+        accessToken: data.access_token,
+        clientCode: String(data.codigoCliente),
+        storeKey: data.chaveLoja,
+        email: data.user.email,
+        document: data.user.document,
+      };
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async getMe(accessToken: string): Promise<GatewayMeResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<GatewayMeResponse>(`${this.baseUrl}/users/me`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  private rethrow(error: unknown): never {
+    if (isAxiosError(error)) {
+      const status = error.response?.status;
+      const data = error.response?.data as
+        { message?: string | string[] } | undefined;
+      const rawMessage = data?.message;
+      const message = Array.isArray(rawMessage)
+        ? rawMessage.join(', ')
+        : (rawMessage ?? error.message ?? 'Gateway request failed');
+      if (status === 401 || status === 403) {
+        throw new UnauthorizedException(message);
+      }
+      if (status === 409) {
+        throw new ConflictException(message);
+      }
+      throw new BadGatewayException(message);
+    }
+    throw error;
+  }
+}
