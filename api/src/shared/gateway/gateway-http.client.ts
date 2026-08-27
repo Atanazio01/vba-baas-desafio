@@ -74,6 +74,11 @@ export type GatewayPixPaymentResponse = {
   [key: string]: unknown;
 };
 
+export type GatewayRegisterWebhookResponse = {
+  message?: string;
+  [key: string]: unknown;
+};
+
 @Injectable()
 export class GatewayHttpClient {
   private readonly baseUrl: string;
@@ -143,6 +148,24 @@ export class GatewayHttpClient {
       const { data } = await firstValueFrom(
         this.http.post<GatewayPixPaymentResponse>(
           `${this.baseUrl}/payments/pix`,
+          payload,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async registerWebhook(
+    accessToken: string,
+    payload: { event: string; url: string; secret?: string },
+  ): Promise<GatewayRegisterWebhookResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post<GatewayRegisterWebhookResponse>(
+          `${this.baseUrl}/webhooks`,
           payload,
           { headers: { Authorization: `Bearer ${accessToken}` } },
         ),

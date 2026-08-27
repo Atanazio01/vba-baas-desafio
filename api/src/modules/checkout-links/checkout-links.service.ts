@@ -24,7 +24,9 @@ export class CheckoutLinksService {
   async createPix(userId: string, dto: CreatePixCheckoutDto) {
     const token = await this.gatewayAccounts.getDecryptedToken(userId);
 
+    // gera um ID público para o checkout link, ID usado para acessar o checkout link
     const publicId = randomUUID().replace(/-/g, '').slice(0, 12);
+    // gera um ID externo para o checkout link, ID usado para identificar o pagamento no gateway
     const externalReference = `PIX-${randomUUID()}`;
 
     const link = await this.linksRepo.save(
