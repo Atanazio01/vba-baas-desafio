@@ -6,7 +6,10 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { authService } from '../../services/auth/AuthService'
+import { registerSessionExpiredHandler } from '../../services/http/session'
+import { ROUTES } from '../../routes/paths'
 import { clearToken, getToken, setToken } from '../../utils/storage'
 import type { UserProfile } from '../../types/user'
 
@@ -24,6 +27,19 @@ export const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+
+  const logout = useCallback(() => {
+    clearToken()
+    setUser(null)
+  }, [])
+
+  useEffect(() => {
+    return registerSessionExpiredHandler(() => {
+      logout()
+      navigate(ROUTES.LOGIN, { replace: true })
+    })
+  }, [logout, navigate])
 
   const refreshMe = useCallback(async () => {
     if (!getToken()) {
@@ -36,8 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = await authService.getMe()
       setUser(profile)
     } catch {
-      clearToken()
-      setUser(null)
+      if (!getToken()) {
+        setUser(null)
+      }
     } finally {
       setLoading(false)
     }
@@ -63,11 +80,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [],
   )
-
-  const logout = useCallback(() => {
-    clearToken()
-    setUser(null)
-  }, [])
 
   const value = useMemo(
     () => ({ user, loading, signin, signup, logout, refreshMe }),

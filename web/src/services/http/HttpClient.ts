@@ -1,6 +1,11 @@
 import axios, { type AxiosError } from 'axios'
 import { ApiError } from '../../errors/ApiError'
 import { clearToken, getToken } from '../../utils/storage'
+import {
+  isAuthAttemptRequest,
+  isSessionExpiredRequest,
+  notifySessionExpired,
+} from './session'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
@@ -20,15 +25,17 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ message?: string | string[] }>) => {
-    if (error.response?.status === 401 && getToken()) {
+    const url = error.config?.url
+    const status = error.response?.status
+
+    if (
+      status === 401 &&
+      getToken() &&
+      !isAuthAttemptRequest(url) &&
+      isSessionExpiredRequest(url)
+    ) {
       clearToken()
-      const publicPaths = ['/login', '/signup', '/checkout']
-      const isPublic = publicPaths.some((p) =>
-        window.location.pathname.startsWith(p),
-      )
-      if (!isPublic) {
-        window.location.href = '/login'
-      }
+      notifySessionExpired()
     }
 
     const message = error.response?.data?.message
@@ -36,7 +43,7 @@ http.interceptors.response.use(
       ? message.join(', ')
       : (message ?? error.message)
 
-    throw new ApiError(text, error.response?.status ?? 500)
+    throw new ApiError(text, status ?? 500)
   },
 )
 

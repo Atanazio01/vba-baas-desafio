@@ -13,8 +13,6 @@ import NotFoundPage from '../pages/NotFound'
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-
       <Route
         path={ROUTES.LOGIN}
         element={
@@ -35,6 +33,10 @@ export function AppRoutes() {
       <Route path="/checkout/:publicId" element={<PublicCheckoutPage />} />
 
       <Route element={<ProtectedRoute />}>
+        <Route
+          path={ROUTES.HOME}
+          element={<Navigate to={ROUTES.DASHBOARD} replace />}
+        />
         <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
         <Route element={<GatewayRoute />}>
           <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />

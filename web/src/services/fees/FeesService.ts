@@ -1,10 +1,10 @@
-import axios from 'axios'
-import { API_URL } from '../http/HttpClient'
+import { http } from '../http/HttpClient'
+import type { GatewayFeesResponse } from '../../types/fees'
 
 class FeesService {
   getFees(brand?: string) {
-    return axios
-      .get<unknown>(`${API_URL}/fees`, { params: brand ? { brand } : {} })
+    return http
+      .get<GatewayFeesResponse>('/fees', { params: brand ? { brand } : {} })
       .then((r) => r.data)
   }
 }

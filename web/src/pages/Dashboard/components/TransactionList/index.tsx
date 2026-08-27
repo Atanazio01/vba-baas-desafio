@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import type { PaymentStatus, WalletTransactionType } from '../../../../types/enums'
 import { StatusBadge } from '../../../../components/molecules/StatusBadge'
 import { Spinner } from '../../../../components/atoms/Spinner'
+import { useAuth } from '../../../../context/AuthContext/useAuth'
 import { walletService } from '../../../../services/wallet/WalletService'
+import { getApiErrorMessage } from '../../../../utils/getApiErrorMessage'
 
 type Props = {
   status: PaymentStatus | ''
@@ -10,6 +12,8 @@ type Props = {
 }
 
 export function TransactionList({ status, type }: Props) {
+  const { user } = useAuth()
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['wallet-transactions', status, type],
     queryFn: () =>
@@ -18,6 +22,7 @@ export function TransactionList({ status, type }: Props) {
         ...(status ? { status } : {}),
         ...(type ? { type } : {}),
       }),
+    enabled: !!user,
   })
 
   if (isLoading) {
@@ -31,7 +36,7 @@ export function TransactionList({ status, type }: Props) {
   if (error) {
     return (
       <p className="py-8 text-center text-sm text-red-600">
-        Erro ao carregar transações.
+        Erro ao carregar transações: {getApiErrorMessage(error)}
       </p>
     )
   }

@@ -1,11 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
-import { walletService } from '../../../../services/wallet/WalletService'
 import { Spinner } from '../../../../components/atoms/Spinner'
+import { useAuth } from '../../../../context/AuthContext/useAuth'
+import { walletService } from '../../../../services/wallet/WalletService'
+import { getApiErrorMessage } from '../../../../utils/getApiErrorMessage'
 
 export function BalanceCard() {
+  const { user } = useAuth()
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['wallet-balance'],
     queryFn: () => walletService.getBalance(),
+    enabled: !!user,
   })
 
   if (isLoading) {
@@ -19,7 +24,8 @@ export function BalanceCard() {
   if (error) {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
-        Erro ao carregar saldo.
+        <p className="text-sm font-medium">Erro ao carregar saldo.</p>
+        <p className="mt-1 text-sm">{getApiErrorMessage(error)}</p>
       </div>
     )
   }
