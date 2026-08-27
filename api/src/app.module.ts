@@ -1,11 +1,27 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AuthGuard } from './modules/auth/auth.guard';
+import { AuthModule } from './modules/auth/auth.module';
+import { CheckoutLinksModule } from './modules/checkout-links/checkout-links.module';
+import { GatewayAccountsModule } from './modules/gateway-accounts/gateway-accounts.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { TransactionModule } from './modules/transaction/transaction.module';
+import { UsersModule } from './modules/users/users.module';
+import { WebhookEventsModule } from './modules/webhook-events/webhook-events.module';
+import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 
 @Module({
   imports: [
+    UsersModule,
+    GatewayAccountsModule,
+    CheckoutLinksModule,
+    OrdersModule,
+    TransactionModule,
+    WithdrawalsModule,
+    WebhookEventsModule,
+    AuthModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -21,7 +37,11 @@ import { AppService } from './app.service';
       }),
     }),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    {
+      provide: APP_GUARD, // protege todas as rotas
+      useClass: AuthGuard, // usa o guard de autenticação
+    },
+  ],
 })
 export class AppModule {}
