@@ -8,10 +8,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { PaymentStatus } from '../../../shared/enums/payment-status.enum';
+import { TransactionType } from '../../../shared/enums/transaction-type.enum';
 import { CheckoutLink } from '../../checkout-links/entities/checkout-link.entity';
 import { Order } from '../../orders/entities/order.entity';
 import { User } from '../../users/entities/user.entity';
-import { TransactionType } from '../enums/transaction-type.enum';
 
 @Entity('transactions')
 export class Transaction {

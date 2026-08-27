@@ -8,6 +8,7 @@ import { GatewayAccountsModule } from './modules/gateway-accounts/gateway-accoun
 import { OrdersModule } from './modules/orders/orders.module';
 import { TransactionModule } from './modules/transaction/transaction.module';
 import { UsersModule } from './modules/users/users.module';
+import { WebhookEventsModule } from './modules/webhook-events/webhook-events.module';
 import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
     OrdersModule,
     TransactionModule,
     WithdrawalsModule,
+    WebhookEventsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
