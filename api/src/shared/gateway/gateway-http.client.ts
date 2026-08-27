@@ -79,6 +79,44 @@ export type GatewayRegisterWebhookResponse = {
   [key: string]: unknown;
 };
 
+export type GatewayWalletTransactionsQuery = {
+  limit?: number | string;
+  status?: 'PENDING' | 'APPROVED' | 'DENIED' | 'EXPIRED' | 'CANCELLED';
+  type?: 'PIX' | 'CREDIT_CARD' | 'WITHDRAWAL';
+};
+
+export type GatewayWalletTransaction = {
+  id: string;
+  type: 'PIX' | 'CREDIT_CARD' | 'WITHDRAWAL';
+  status: 'PENDING' | 'APPROVED' | 'DENIED' | 'EXPIRED' | 'CANCELLED';
+  denialReason: string | null;
+  amount: number; // centavos
+  amountFormatted: string;
+  description: string | null;
+  message: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type GatewayWalletTransactionsResponse = {
+  walletId: string;
+  balance: number;
+  balanceFormatted: string;
+  filters: {
+    status: string | null;
+    type: string | null;
+  };
+  transactions: GatewayWalletTransaction[];
+};
+
+export type GatewayWalletResponse = {
+  id: string;
+  userId: string;
+  balance: number;
+  balanceFormatted: string;
+  updatedAt: string;
+};
+
 @Injectable()
 export class GatewayHttpClient {
   private readonly baseUrl: string;
@@ -150,6 +188,39 @@ export class GatewayHttpClient {
           `${this.baseUrl}/payments/pix`,
           payload,
           { headers: { Authorization: `Bearer ${accessToken}` } },
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async getWallet(accessToken: string): Promise<GatewayWalletResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<GatewayWalletResponse>(`${this.baseUrl}/wallet`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async listWalletTransactions(
+    accessToken: string,
+    query: GatewayWalletTransactionsQuery = {},
+  ): Promise<GatewayWalletTransactionsResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<GatewayWalletTransactionsResponse>(
+          `${this.baseUrl}/wallet/transactions`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: query,
+          },
         ),
       );
       return data;

@@ -9,6 +9,7 @@ import { GatewayAccountsModule } from './modules/gateway-accounts/gateway-accoun
 import { OrdersModule } from './modules/orders/orders.module';
 import { TransactionModule } from './modules/transaction/transaction.module';
 import { UsersModule } from './modules/users/users.module';
+import { WalletModule } from './modules/wallets/wallet.module';
 import { WebhookEventsModule } from './modules/webhook-events/webhook-events.module';
 import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 
@@ -22,6 +23,7 @@ import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
     WithdrawalsModule,
     WebhookEventsModule,
     AuthModule,
+    WalletModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
