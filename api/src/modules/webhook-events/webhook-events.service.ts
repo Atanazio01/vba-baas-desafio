@@ -10,11 +10,12 @@ import { CheckoutLink } from '../checkout-links/entities/checkout-link.entity';
 import { GatewayAccountsService } from '../gateway-accounts/gateway-accounts.service';
 import { Order } from '../orders/entities/order.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
+import { Withdrawal } from '../withdrawals/entities/withdrawal.entity';
 import { RegisterWebhookDto } from './dto/register-webhook.dto';
 import { WebhookEvent } from './entities/webhook-event.entity';
 import { WebhookProcessingStatus } from './enums/processing-status.enum';
 
-type LeraPixWebhook = {
+type LeraPaymentWebhook = {
   event?: string;
   status?: string;
   transactionId?: string;
@@ -38,6 +39,8 @@ export class WebhookEventsService {
     private readonly linksRepo: Repository<CheckoutLink>,
     @InjectRepository(Transaction)
     private readonly txRepo: Repository<Transaction>,
+    @InjectRepository(Withdrawal)
+    private readonly withdrawalsRepo: Repository<Withdrawal>,
     private readonly gatewayAccounts: GatewayAccountsService,
     private readonly gatewayHttp: GatewayHttpClient,
     private readonly config: ConfigService,
@@ -55,7 +58,7 @@ export class WebhookEventsService {
 
   async handleIncoming(
     eventType: TransactionType,
-    body: LeraPixWebhook,
+    body: LeraPaymentWebhook,
     signature: string | undefined,
   ) {
     const externalReference = body.externalReference;
@@ -130,20 +133,25 @@ export class WebhookEventsService {
         await this.linksRepo.save(link);
       }
 
-      await this.txRepo.save(
-        this.txRepo.create({
-          userId: order.userId,
-          orderId: order.id,
-          checkoutLinkId: order.checkoutLinkId,
-          gatewayPaymentId: body.transactionId ?? body.txid ?? null,
-          externalReference,
-          type: eventType,
-          status,
-          amountCents: body.amount ?? order.amountCents,
-          feePercent: null,
-          gatewayPayload: body,
-        }),
-      );
+      const existingTx = await this.txRepo.findOne({
+        where: { externalReference },
+      });
+      if (!existingTx) {
+        await this.txRepo.save(
+          this.txRepo.create({
+            userId: order.userId,
+            orderId: order.id,
+            checkoutLinkId: order.checkoutLinkId,
+            gatewayPaymentId: body.transactionId ?? body.txid ?? null,
+            externalReference,
+            type: eventType,
+            status,
+            amountCents: body.amount ?? order.amountCents,
+            feePercent: link?.feePercent ?? null,
+            gatewayPayload: body,
+          }),
+        );
+      }
 
       event.processingStatus = WebhookProcessingStatus.PROCESSED;
       event.processedAt = new Date();
@@ -162,7 +170,7 @@ export class WebhookEventsService {
   }
 
   private verifySignature(
-    body: LeraPixWebhook,
+    body: LeraPaymentWebhook,
     signature: string | undefined,
   ): boolean {
     const secret = this.config.get<string>('WEBHOOK_HMAC_SECRET');
@@ -170,7 +178,6 @@ export class WebhookEventsService {
       return false;
     }
 
-    // Tentativa comum: HMAC-SHA256(JSON) em hex
     const expected = createHmac('sha256', secret)
       .update(JSON.stringify(body))
       .digest('hex');
@@ -184,6 +191,113 @@ export class WebhookEventsService {
       return timingSafeEqual(a, b);
     } catch {
       return false;
+    }
+  }
+
+  async handleWithdrawalIncoming(
+    body: LeraPaymentWebhook,
+    signature: string | undefined,
+  ) {
+    const externalReference = body.externalReference;
+    const idempotencyKey =
+      body.transactionId ??
+      createHash('sha256').update(JSON.stringify(body)).digest('hex');
+
+    this.logger.log(
+      `Webhook WITHDRAWAL ref=${externalReference} status=${body.status}`,
+    );
+
+    const existing = await this.eventsRepo.findOne({
+      where: { idempotencyKey },
+    });
+    if (existing) {
+      return { ok: true, status: WebhookProcessingStatus.SKIPPED };
+    }
+
+    if (!externalReference) {
+      return { ok: false, error: 'missing externalReference' };
+    }
+
+    const withdrawal = await this.withdrawalsRepo.findOne({
+      where: { externalReference },
+    });
+    if (!withdrawal) {
+      this.logger.warn(`Withdrawal not found for ${externalReference}`);
+      return { ok: false, error: 'withdrawal not found' };
+    }
+
+    const signatureValid = this.verifySignature(body, signature);
+
+    const event = await this.eventsRepo.save(
+      this.eventsRepo.create({
+        userId: withdrawal.userId,
+        eventType: TransactionType.WITHDRAWAL,
+        idempotencyKey,
+        signatureValid,
+        payload: body,
+        processingStatus: WebhookProcessingStatus.PENDING,
+        processedAt: null,
+        errorMessage: null,
+      }),
+    );
+
+    if (!signatureValid) {
+      event.processingStatus = WebhookProcessingStatus.SKIPPED;
+      event.errorMessage = 'Invalid signature';
+      event.processedAt = new Date();
+      await this.eventsRepo.save(event);
+      return { ok: false, status: WebhookProcessingStatus.SKIPPED };
+    }
+
+    try {
+      event.processingStatus = WebhookProcessingStatus.PROCESSING;
+      await this.eventsRepo.save(event);
+
+      const status = this.mapStatus(body.status);
+
+      withdrawal.status = status;
+      withdrawal.gatewayWithdrawalId =
+        body.transactionId ?? withdrawal.gatewayWithdrawalId;
+      withdrawal.gatewayPayload = body;
+      await this.withdrawalsRepo.save(withdrawal);
+
+      const existingTx = await this.txRepo.findOne({
+        where: { externalReference },
+      });
+      if (!existingTx) {
+        await this.txRepo.save(
+          this.txRepo.create({
+            userId: withdrawal.userId,
+            orderId: null,
+            checkoutLinkId: null,
+            gatewayPaymentId: body.transactionId ?? null,
+            externalReference,
+            type: TransactionType.WITHDRAWAL,
+            status,
+            amountCents: body.amount ?? withdrawal.amountCents,
+            feePercent: null,
+            gatewayPayload: body,
+          }),
+        );
+      } else if (existingTx.status !== status) {
+        existingTx.status = status;
+        existingTx.gatewayPayload = body;
+        await this.txRepo.save(existingTx);
+      }
+
+      event.processingStatus = WebhookProcessingStatus.PROCESSED;
+      event.processedAt = new Date();
+      await this.eventsRepo.save(event);
+
+      return { ok: true, status: WebhookProcessingStatus.PROCESSED };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'process failed';
+      event.processingStatus = WebhookProcessingStatus.FAILED;
+      event.errorMessage = message;
+      event.processedAt = new Date();
+      await this.eventsRepo.save(event);
+      this.logger.error(message);
+      return { ok: false, status: WebhookProcessingStatus.FAILED };
     }
   }
 

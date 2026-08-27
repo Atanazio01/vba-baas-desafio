@@ -79,6 +79,90 @@ export type GatewayRegisterWebhookResponse = {
   [key: string]: unknown;
 };
 
+export type GatewayWalletTransactionsQuery = {
+  limit?: number | string;
+  status?: 'PENDING' | 'APPROVED' | 'DENIED' | 'EXPIRED' | 'CANCELLED';
+  type?: 'PIX' | 'CREDIT_CARD' | 'WITHDRAWAL';
+};
+
+export type GatewayWalletTransaction = {
+  id: string;
+  type: 'PIX' | 'CREDIT_CARD' | 'WITHDRAWAL';
+  status: 'PENDING' | 'APPROVED' | 'DENIED' | 'EXPIRED' | 'CANCELLED';
+  denialReason: string | null;
+  amount: number; // centavos
+  amountFormatted: string;
+  description: string | null;
+  message: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type GatewayWalletTransactionsResponse = {
+  walletId: string;
+  balance: number;
+  balanceFormatted: string;
+  filters: {
+    status: string | null;
+    type: string | null;
+  };
+  transactions: GatewayWalletTransaction[];
+};
+
+export type GatewayWalletResponse = {
+  id: string;
+  userId: string;
+  balance: number;
+  balanceFormatted: string;
+  updatedAt: string;
+};
+
+export type CreateCardPaymentPayload = {
+  amount: number;
+  description?: string;
+  externalReference?: string;
+  cardNumber: string;
+  cardHolder: string;
+  expiryMonth: string;
+  expiryYear: string;
+  cvv: string;
+  installments: number;
+  feePercent: number;
+};
+
+export type GatewayCardPaymentResponse = {
+  id?: string;
+  status?: string;
+  amount?: number;
+  feePercent?: number;
+  installments?: number;
+  brand?: string;
+  [key: string]: unknown;
+};
+
+export type GatewayFeesQuery = {
+  brand?: 'VISA' | 'MASTERCARD' | 'ELO';
+};
+
+export type GatewayFeesResponse = unknown; // ajusta no 1º GET real
+
+export type CreateWithdrawalPayload = {
+  amount: number;
+  pixKey: string;
+  document: string;
+  description?: string;
+  externalReference?: string;
+};
+
+export type GatewayWithdrawalResponse = {
+  id?: string;
+  status?: string;
+  amount?: number;
+  externalReference?: string;
+  denialReason?: string | null;
+  [key: string]: unknown;
+};
+
 @Injectable()
 export class GatewayHttpClient {
   private readonly baseUrl: string;
@@ -158,6 +242,70 @@ export class GatewayHttpClient {
     }
   }
 
+  async getWallet(accessToken: string): Promise<GatewayWalletResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<GatewayWalletResponse>(`${this.baseUrl}/wallet`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async listWalletTransactions(
+    accessToken: string,
+    query: GatewayWalletTransactionsQuery = {},
+  ): Promise<GatewayWalletTransactionsResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<GatewayWalletTransactionsResponse>(
+          `${this.baseUrl}/wallet/transactions`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: query,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async getFees(query: GatewayFeesQuery = {}): Promise<GatewayFeesResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<GatewayFeesResponse>(`${this.baseUrl}/fees`, {
+          params: query,
+        }),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async createCardPayment(
+    accessToken: string,
+    payload: CreateCardPaymentPayload,
+  ): Promise<GatewayCardPaymentResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post<GatewayCardPaymentResponse>(
+          `${this.baseUrl}/payments/card`,
+          payload,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
   async registerWebhook(
     accessToken: string,
     payload: { event: string; url: string; secret?: string },
@@ -167,6 +315,41 @@ export class GatewayHttpClient {
         this.http.post<GatewayRegisterWebhookResponse>(
           `${this.baseUrl}/webhooks`,
           payload,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async createWithdrawal(
+    accessToken: string,
+    payload: CreateWithdrawalPayload,
+  ): Promise<GatewayWithdrawalResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post<GatewayWithdrawalResponse>(
+          `${this.baseUrl}/withdrawals`,
+          payload,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+        ),
+      );
+      return data;
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  async getWithdrawal(
+    accessToken: string,
+    id: string,
+  ): Promise<GatewayWithdrawalResponse> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<GatewayWithdrawalResponse>(
+          `${this.baseUrl}/withdrawals/${id}`,
           { headers: { Authorization: `Bearer ${accessToken}` } },
         ),
       );

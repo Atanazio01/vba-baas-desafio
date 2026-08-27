@@ -5,13 +5,20 @@ import { CheckoutLink } from '../checkout-links/entities/checkout-link.entity';
 import { GatewayAccountsModule } from '../gateway-accounts/gateway-accounts.module';
 import { Order } from '../orders/entities/order.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
+import { Withdrawal } from '../withdrawals/entities/withdrawal.entity';
 import { WebhookEvent } from './entities/webhook-event.entity';
 import { WebhookEventsController } from './webhook-events.controller';
 import { WebhookEventsService } from './webhook-events.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([WebhookEvent, Order, CheckoutLink, Transaction]),
+    TypeOrmModule.forFeature([
+      WebhookEvent,
+      Order,
+      CheckoutLink,
+      Transaction,
+      Withdrawal,
+    ]),
     GatewayModule,
     GatewayAccountsModule,
   ],

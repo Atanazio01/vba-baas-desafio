@@ -31,6 +31,9 @@ export class Withdrawal {
   })
   gatewayWithdrawalId!: string | null;
 
+  @Column({ name: 'external_reference', type: 'varchar', unique: true })
+  externalReference!: string;
+
   @Column({ name: 'amount_cents', type: 'int' })
   amountCents!: number;
 
