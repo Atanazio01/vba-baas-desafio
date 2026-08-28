@@ -5,9 +5,14 @@ export function formatMoney(cents: number): string {
   })
 }
 
+export function formatCurrencyInput(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return ''
+  return formatMoney(Number(digits))
+}
+
 export function parseMoneyToCents(value: string): number {
-  const normalized = value.replace(/[^\d,]/g, '').replace(',', '.')
-  const amount = parseFloat(normalized)
-  if (Number.isNaN(amount)) return 0
-  return Math.round(amount * 100)
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return 0
+  return Number(digits)
 }
