@@ -1,6 +1,8 @@
 import axios from 'axios'
 import { API_URL, http } from '../http/HttpClient'
 import type {
+  CardCheckoutResponse,
+  CreateCardRequest,
   CreatePixRequest,
   PixCheckoutResponse,
   PublicCheckoutResponse,
@@ -12,6 +14,12 @@ class CheckoutService {
   createPix(data: CreatePixRequest) {
     return http
       .post<PixCheckoutResponse>('/checkout-links/pix', data)
+      .then((r) => r.data)
+  }
+
+  createCard(data: CreateCardRequest) {
+    return http
+      .post<CardCheckoutResponse>('/checkout-links/card', data)
       .then((r) => r.data)
   }
 

@@ -31,3 +31,11 @@ export const PaymentMethod = {
 } as const
 
 export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod]
+
+export const CardBrand = {
+  VISA: 'VISA',
+  MASTERCARD: 'MASTERCARD',
+  ELO: 'ELO',
+} as const
+
+export type CardBrand = (typeof CardBrand)[keyof typeof CardBrand]

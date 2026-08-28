@@ -1,6 +1,8 @@
 import { useParams } from 'react-router-dom'
 import { Spinner } from '../../components/atoms/Spinner'
+import { CardPaymentDetails } from '../../components/molecules/CardPaymentDetails'
 import { PixPaymentDetails } from '../../components/molecules/PixPaymentDetails'
+import { PaymentMethod } from '../../types/enums'
 import { usePublicCheckout } from './usePublicCheckout'
 
 export function PublicCheckoutPage() {
@@ -25,19 +27,30 @@ export function PublicCheckoutPage() {
     )
   }
 
+  const title =
+    data.method === PaymentMethod.CARD ? 'Comprovante cartão' : 'Pagamento Pix'
+
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">
-          Pagamento Pix
-        </h1>
-        <PixPaymentDetails
-          amountCents={data.amountCents}
-          status={data.status}
-          pixEmv={data.pixEmv}
-          pixQrBase64={data.pixQrBase64}
-          onCopyEmv={copyEmv}
-        />
+        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">{title}</h1>
+        {data.method === PaymentMethod.CARD ? (
+          <CardPaymentDetails
+            amountCents={data.amountCents}
+            status={data.status}
+            brand={data.brand}
+            installments={data.installments}
+            feePercent={data.feePercent}
+          />
+        ) : (
+          <PixPaymentDetails
+            amountCents={data.amountCents}
+            status={data.status}
+            pixEmv={data.pixEmv}
+            pixQrBase64={data.pixQrBase64}
+            onCopyEmv={copyEmv}
+          />
+        )}
       </div>
     </div>
   )
