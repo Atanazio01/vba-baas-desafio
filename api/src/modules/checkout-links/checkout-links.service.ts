@@ -1,15 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
+import { EmailService } from '../../shared/email/email.service';
 import { PaymentStatus } from '../../shared/enums/payment-status.enum';
 import { TransactionType } from '../../shared/enums/transaction-type.enum';
 import { GatewayHttpClient } from '../../shared/gateway/gateway-http.client';
 import { GatewayAccountsService } from '../gateway-accounts/gateway-accounts.service';
 import { Order } from '../orders/entities/order.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
+import { UsersService } from '../users/users.service';
 import { CreateCardCheckoutDto } from './dto/create-card-checkout.dto';
 import { CreatePixCheckoutDto } from './dto/create-pix-checkout.dto';
+import { SendCheckoutEmailDto } from './dto/send-checkout-email.dto';
 import { CheckoutLink } from './entities/checkout-link.entity';
 import { PaymentMethod } from './enums/payment-method.enum';
 
@@ -24,7 +32,40 @@ export class CheckoutLinksService {
     private readonly txRepo: Repository<Transaction>,
     private readonly gatewayAccounts: GatewayAccountsService,
     private readonly gatewayHttp: GatewayHttpClient,
+    private readonly emailService: EmailService,
+    private readonly config: ConfigService,
+    private readonly usersService: UsersService,
   ) {}
+
+  private resolvePixCreateStatus(
+    pix: {
+      status?: string;
+      emv?: string;
+      copyPaste?: string;
+      qrCodeBase64?: string;
+      qr_code_base64?: string;
+    },
+    emv: string | null,
+    qr: string | null,
+  ): PaymentStatus {
+    const mapped = this.mapGatewayStatus(pix.status);
+
+    // Cobrança com QR/copia-e-cola = aguardando pagamento
+    if (emv || qr) {
+      return PaymentStatus.PENDING;
+    }
+
+    return mapped;
+  }
+
+  private normalizeQrBase64(value: string | undefined): string | null {
+    if (!value) return null;
+
+    const trimmed = value.trim();
+    const match = /^data:image\/[a-z+]+;base64,(.+)$/i.exec(trimmed);
+
+    return match ? match[1] : trimmed;
+  }
 
   private async mirrorTransaction(params: {
     userId: string;
@@ -89,9 +130,9 @@ export class CheckoutLinksService {
     });
 
     const emv = pix.emv ?? pix.copyPaste;
-    const qr = pix.qrCodeBase64 ?? pix.qr_code_base64;
+    const qr = this.normalizeQrBase64(pix.qrCodeBase64 ?? pix.qr_code_base64);
     const gatewayPaymentId = pix.id ?? pix.txid ?? null;
-    const gatewayStatus = this.mapGatewayStatus(pix.status);
+    const gatewayStatus = this.resolvePixCreateStatus(pix, emv ?? null, qr);
 
     link.pixEmv = emv ?? null;
     link.pixQrBase64 = qr ?? null;
@@ -248,6 +289,54 @@ export class CheckoutLinksService {
         installments: link.installments,
         feePercent: link.feePercent,
       }),
+    };
+  }
+
+  private formatAmount(cents: number): string {
+    return (cents / 100).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+  }
+
+  private methodLabel(method: PaymentMethod): string {
+    return method === PaymentMethod.PIX ? 'Pix' : 'Cartão';
+  }
+
+  async sendCheckoutLinkEmail(
+    userId: string,
+    publicId: string,
+    dto: SendCheckoutEmailDto,
+  ) {
+    const link = await this.linksRepo.findOne({ where: { publicId } });
+
+    if (!link) {
+      throw new NotFoundException('Checkout link not found');
+    }
+
+    if (link.userId !== userId) {
+      throw new ForbiddenException('You do not own this checkout link');
+    }
+
+    const user = await this.usersService.getProfile(userId);
+    const frontendUrl = this.config
+      .getOrThrow<string>('FRONTEND_URL')
+      .replace(/\/$/, '');
+    const checkoutUrl = `${frontendUrl}/checkout/${link.publicId}`;
+
+    await this.emailService.sendCheckoutLinkEmail({
+      to: dto.to,
+      checkoutUrl,
+      amountFormatted: this.formatAmount(link.amountCents),
+      method: this.methodLabel(link.method),
+      senderName: user.name,
+      customMessage: dto.message,
+    });
+
+    return {
+      sent: true,
+      to: dto.to,
+      checkoutUrl,
     };
   }
 

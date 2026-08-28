@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EmailModule } from '../../shared/email/email.module';
 import { GatewayModule } from '../../shared/gateway/gateway.module';
 import { GatewayAccountsModule } from '../gateway-accounts/gateway-accounts.module';
 import { Order } from '../orders/entities/order.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
 import { TransactionModule } from '../transaction/transaction.module';
+import { UsersModule } from '../users/users.module';
 import { CheckoutLinksController } from './checkout-links.controller';
 import { CheckoutLinksService } from './checkout-links.service';
 import { CheckoutLink } from './entities/checkout-link.entity';
@@ -15,6 +17,8 @@ import { CheckoutLink } from './entities/checkout-link.entity';
     GatewayAccountsModule,
     GatewayModule,
     TransactionModule,
+    EmailModule,
+    UsersModule,
   ],
   controllers: [CheckoutLinksController],
   providers: [CheckoutLinksService],

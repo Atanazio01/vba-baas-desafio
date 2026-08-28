@@ -17,6 +17,7 @@ import { IsPublic } from '../../shared/decorators/is-public.decorator';
 import { CheckoutLinksService } from './checkout-links.service';
 import { CreateCardCheckoutDto } from './dto/create-card-checkout.dto';
 import { CreatePixCheckoutDto } from './dto/create-pix-checkout.dto';
+import { SendCheckoutEmailDto } from './dto/send-checkout-email.dto';
 
 @ApiTags('Checkout Links')
 @Controller('checkout-links')
@@ -48,5 +49,17 @@ export class CheckoutLinksController {
       throw new NotFoundException('Checkout link not found');
     }
     return link;
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Envia link de pagamento por e-mail' })
+  @ApiParam({ name: 'publicId', example: 'abc123def456' })
+  @Post(':publicId/send-email')
+  sendEmail(
+    @ActiveUserId() userId: string,
+    @Param('publicId') publicId: string,
+    @Body() dto: SendCheckoutEmailDto,
+  ) {
+    return this.service.sendCheckoutLinkEmail(userId, publicId, dto);
   }
 }
