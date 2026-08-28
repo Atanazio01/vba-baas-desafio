@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { PixLinkForm } from '../PixLinkForm'
-import { CardPaymentForm } from '../CardPaymentForm'
+import { useState } from 'react';
+import { CardPaymentForm } from '../CardPaymentForm';
+import { PixLinkForm } from '../PixLinkForm';
 
 type ChargeMode = 'pix' | 'card'
 
@@ -17,7 +17,7 @@ export function ChargeTerminal() {
       <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
         <h2 className="text-lg font-semibold text-gray-900">Terminal de cobrança</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Gere cobranças Pix ou passe cartão na maquininha.
+          Gere cobranças Pix ou crie um link de pagamento para cartão.
         </p>
         <div className="mt-4 inline-flex rounded-lg bg-gray-200/80 p-1">
           {tabs.map((tab) => (

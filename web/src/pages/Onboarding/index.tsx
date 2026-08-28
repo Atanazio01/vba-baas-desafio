@@ -1,9 +1,9 @@
-import { Button } from '../../components/atoms/Button'
-import { Input } from '../../components/atoms/Input'
-import { FormField } from '../../components/molecules/FormField'
-import { OnboardingLayout } from '../../components/templates/OnboardingLayout'
-import { PersonType } from '../../types/enums'
-import { useOnboarding } from './useOnboarding'
+import { Button } from '../../components/atoms/Button';
+import { Input } from '../../components/atoms/Input';
+import { FormField } from '../../components/molecules/FormField';
+import { OnboardingLayout } from '../../components/templates/OnboardingLayout';
+import { PersonType } from '../../types/enums';
+import { useOnboarding } from './useOnboarding';
 
 export function OnboardingPage() {
   const {
@@ -58,7 +58,7 @@ export function OnboardingPage() {
 
   return (
     <OnboardingLayout
-      title="Cadastro no gateway"
+      title="Cadastro no Lera Box"
       subtitle="Registre sua conta no Lera Box"
     >
       <form onSubmit={handleRegister}>
@@ -119,7 +119,7 @@ export function OnboardingPage() {
         </FormField>
         {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
         <Button type="submit" className="w-full" loading={loading}>
-          Registrar no gateway
+          Registrar no Lera Box
         </Button>
       </form>
       <p className="mt-4 text-center text-sm text-gray-500">
