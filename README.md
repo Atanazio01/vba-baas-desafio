@@ -1,4 +1,4 @@
-# BaaS VBA Systems — Desafio técnico
+# BaaS VBA Systems
 
 Aplicação **Banking as a Service** para lojistas: checkout Pix e cartão, carteira, extrato, saques e webhooks. O **NestJS** orquestra o produto; o **Lera Box** (BranchPay) processa pagamentos via HTTP.
 
@@ -299,5 +299,3 @@ docker compose build api --no-cache && docker compose up -d api
 ## Autor
 
 Desafio técnico **VBA Systems** — integração BaaS + Lera Box.
-
-Credenciais de demonstração do painel BaaS: enviadas ao avaliador por canal separado (e-mail).
