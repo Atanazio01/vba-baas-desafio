@@ -1,4 +1,5 @@
 import type { PaymentStatus } from '../../../types/enums'
+import { paymentStatusLabels } from '../../../utils/transactionLabels'
 
 const styles: Record<PaymentStatus, string> = {
   PENDING: 'bg-yellow-50 text-yellow-800',
@@ -8,20 +9,12 @@ const styles: Record<PaymentStatus, string> = {
   CANCELLED: 'bg-gray-100 text-gray-600',
 }
 
-const labels: Record<PaymentStatus, string> = {
-  PENDING: 'Pendente',
-  APPROVED: 'Aprovado',
-  DENIED: 'Negado',
-  EXPIRED: 'Expirado',
-  CANCELLED: 'Cancelado',
-}
-
 export function StatusBadge({ status }: { status: PaymentStatus }) {
   return (
     <span
       className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${styles[status]}`}
     >
-      {labels[status]}
+      {paymentStatusLabels[status]}
     </span>
   )
 }

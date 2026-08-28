@@ -1,5 +1,9 @@
 import type { PaymentStatus, WalletTransactionType } from '../../../../types/enums'
 import { PaymentStatus as PS, WalletTransactionType as WTT } from '../../../../types/enums'
+import {
+  paymentStatusLabels,
+  walletTransactionTypeLabels,
+} from '../../../../utils/transactionLabels'
 
 type Props = {
   status: PaymentStatus | ''
@@ -24,7 +28,7 @@ export function TransactionFilters({
         <option value="">Todos os status</option>
         {Object.values(PS).map((s) => (
           <option key={s} value={s}>
-            {s}
+            {paymentStatusLabels[s]}
           </option>
         ))}
       </select>
@@ -36,7 +40,7 @@ export function TransactionFilters({
         <option value="">Todos os tipos</option>
         {Object.values(WTT).map((t) => (
           <option key={t} value={t}>
-            {t}
+            {walletTransactionTypeLabels[t]}
           </option>
         ))}
       </select>
