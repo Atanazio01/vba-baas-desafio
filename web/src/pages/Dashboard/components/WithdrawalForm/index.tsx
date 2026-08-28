@@ -1,14 +1,14 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { Button } from '../../../../components/atoms/Button'
-import { MoneyInput } from '../../../../components/atoms/MoneyInput'
-import { Input } from '../../../../components/atoms/Input'
-import { FormField } from '../../../../components/molecules/FormField'
-import { withdrawalService } from '../../../../services/withdrawal/WithdrawalService'
-import { parseMoneyToCents, formatMoney } from '../../../../utils/formatMoney'
-import { getApiErrorMessage } from '../../../../utils/getApiErrorMessage'
-import { StatusBadge } from '../../../../components/molecules/StatusBadge'
+import { useQueryClient } from '@tanstack/react-query';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
+import { Button } from '../../../../components/atoms/Button';
+import { Input } from '../../../../components/atoms/Input';
+import { MoneyInput } from '../../../../components/atoms/MoneyInput';
+import { FormField } from '../../../../components/molecules/FormField';
+import { StatusBadge } from '../../../../components/molecules/StatusBadge';
+import { withdrawalService } from '../../../../services/withdrawal/WithdrawalService';
+import { formatMoney, parseMoneyToCents } from '../../../../utils/formatMoney';
+import { getApiErrorMessage } from '../../../../utils/getApiErrorMessage';
 
 export function WithdrawalForm({ embedded = false }: { embedded?: boolean }) {
   const [amount, setAmount] = useState('')
@@ -80,7 +80,7 @@ export function WithdrawalForm({ embedded = false }: { embedded?: boolean }) {
     return (
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="mb-1 text-lg font-semibold text-gray-900">Saque</h2>
-        <p className="mb-4 text-sm text-gray-500">Transfira saldo para sua chave Pix.</p>
+        <p className="mb-4 text-sm text-gray-500">Transferências via Pix.</p>
         {form}
         {successBlock}
       </section>
@@ -89,7 +89,7 @@ export function WithdrawalForm({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-gray-900">Saque Pix</h2>
+      <h2 className="mb-4 text-lg font-semibold text-gray-900">Saque</h2>
       {form}
       {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
       {successBlock}

@@ -6,6 +6,7 @@ import { MoneyInput } from '../../../../components/atoms/MoneyInput'
 import { Input } from '../../../../components/atoms/Input'
 import { FormField } from '../../../../components/molecules/FormField'
 import { Modal } from '../../../../components/molecules/Modal'
+import { CheckoutLinkShare } from '../../../../components/molecules/CheckoutLinkShare'
 import { PixPaymentDetails } from '../../../../components/molecules/PixPaymentDetails'
 import { useAuth } from '../../../../context/AuthContext/useAuth'
 import { useErrors } from '../../../../hooks/useErrors'
@@ -144,32 +145,17 @@ export function PixLinkForm({ embedded = false }: { embedded?: boolean }) {
             onCopyEmv={copyEmv}
           />
           {result && (
-            <div className="mt-6 space-y-5 border-t border-gray-100 pt-6">
-              <div className="space-y-3">
-                <p className="break-all text-xs text-gray-500">{result.url}</p>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary" onClick={copyLink}>
-                    Copiar link
-                  </Button>
-                  <Button variant="secondary" onClick={whatsappShare}>
-                    WhatsApp
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={sendEmail}
-                    loading={emailSending}
-                    disabled={!user?.email}
-                  >
-                    Enviar para meu e-mail
-                  </Button>
-                </div>
-                {emailSent && (
-                  <p className="text-sm text-green-600">E-mail enviado com sucesso!</p>
-                )}
-                {emailError && (
-                  <p className="text-sm text-red-600">{emailError}</p>
-                )}
-              </div>
+            <div className="mt-6 border-t border-gray-100 pt-6">
+              <CheckoutLinkShare
+                url={result.url}
+                onCopy={copyLink}
+                onWhatsApp={whatsappShare}
+                onEmail={sendEmail}
+                emailSending={emailSending}
+                emailDisabled={!user?.email}
+                emailSent={emailSent}
+                emailError={emailError}
+              />
             </div>
           )}
         </Modal>
