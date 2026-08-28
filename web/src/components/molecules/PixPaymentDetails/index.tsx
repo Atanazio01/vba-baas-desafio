@@ -14,8 +14,8 @@ type Props = {
 }
 
 const statusMessages: Partial<Record<PaymentStatus, string>> = {
-  [PaymentStatusEnum.APPROVED]: 'Pagamento já confirmado.',
-  [PaymentStatusEnum.DENIED]: 'Cobrança negada.',
+  [PaymentStatusEnum.APPROVED]: 'Pagamento confirmado.',
+  [PaymentStatusEnum.DENIED]: 'Não foi possível concluir este pagamento.',
   [PaymentStatusEnum.EXPIRED]: 'Cobrança expirada.',
   [PaymentStatusEnum.CANCELLED]: 'Cobrança cancelada.',
 }
@@ -34,8 +34,11 @@ export function PixPaymentDetails({
     <>
       <div className="mb-6 text-center">
         <p className="text-3xl font-bold text-green-600">{formatMoney(amountCents)}</p>
-        <div className="mt-3 flex justify-center">
+        <div className="mt-3 flex flex-col items-center gap-2">
           <StatusBadge status={status} />
+          {isPending && (
+            <p className="text-sm text-gray-600">Aguardando confirmação do pagamento…</p>
+          )}
         </div>
       </div>
 

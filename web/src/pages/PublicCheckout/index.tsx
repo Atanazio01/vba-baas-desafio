@@ -3,6 +3,7 @@ import { Spinner } from '../../components/atoms/Spinner'
 import { CardPaymentDetails } from '../../components/molecules/CardPaymentDetails'
 import { PixPaymentDetails } from '../../components/molecules/PixPaymentDetails'
 import { PaymentMethod } from '../../types/enums'
+import { getPublicCheckoutTitle } from '../../utils/checkoutPageTitle'
 import { usePublicCheckout } from './usePublicCheckout'
 
 export function PublicCheckoutPage() {
@@ -27,8 +28,7 @@ export function PublicCheckoutPage() {
     )
   }
 
-  const title =
-    data.method === PaymentMethod.CARD ? 'Comprovante cartão' : 'Pagamento Pix'
+  const title = getPublicCheckoutTitle(data.method, data.status)
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12">

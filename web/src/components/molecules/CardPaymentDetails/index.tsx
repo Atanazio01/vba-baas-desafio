@@ -17,9 +17,9 @@ type Props = {
 }
 
 const statusMessages: Partial<Record<PaymentStatus, string>> = {
-  [PaymentStatusEnum.APPROVED]: 'Pagamento aprovado.',
-  [PaymentStatusEnum.DENIED]: 'Pagamento negado.',
-  [PaymentStatusEnum.PENDING]: 'Pagamento em processamento.',
+  [PaymentStatusEnum.APPROVED]: 'Pagamento confirmado.',
+  [PaymentStatusEnum.DENIED]: 'Não foi possível concluir este pagamento.',
+  [PaymentStatusEnum.PENDING]: 'Aguardando confirmação do pagamento…',
   [PaymentStatusEnum.EXPIRED]: 'Cobrança expirada.',
   [PaymentStatusEnum.CANCELLED]: 'Cobrança cancelada.',
 }
