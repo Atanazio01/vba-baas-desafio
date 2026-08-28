@@ -7,7 +7,7 @@ import { Input } from '../../../../components/atoms/Input'
 import { FormField } from '../../../../components/molecules/FormField'
 import { Modal } from '../../../../components/molecules/Modal'
 import { CheckoutLinkShare } from '../../../../components/molecules/CheckoutLinkShare'
-import { PixPaymentDetails } from '../../../../components/molecules/PixPaymentDetails'
+import { PixGeneratedPreview } from '../../../../components/molecules/PixGeneratedPreview'
 import { useAuth } from '../../../../context/AuthContext/useAuth'
 import { useErrors } from '../../../../hooks/useErrors'
 import { checkoutService } from '../../../../services/checkout/CheckoutService'
@@ -137,9 +137,8 @@ export function PixLinkForm({ embedded = false }: { embedded?: boolean }) {
           onClose={() => setModalOpen(false)}
           title="Cobrança Pix gerada"
         >
-          <PixPaymentDetails
+          <PixGeneratedPreview
             amountCents={createdPix.amountCents}
-            status={createdPix.status}
             pixEmv={createdPix.pixEmv}
             pixQrBase64={createdPix.pixQrBase64}
             onCopyEmv={copyEmv}
