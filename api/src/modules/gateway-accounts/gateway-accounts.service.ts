@@ -50,6 +50,29 @@ export class GatewayAccountsService {
     };
   }
 
+  async reconnect(userId: string, dto: ConnectGatewayDto) {
+    const account = await this.repo.findOne({ where: { userId } });
+
+    if (!account) {
+      throw new NotFoundException('Gateway account not connected');
+    }
+
+    const login = await this.gatewayHttp.login(dto.document, dto.password);
+
+    account.gatewayEmail = login.email;
+    account.gatewayDocument = login.document;
+    account.clientCode = login.clientCode;
+    account.storeKey = login.storeKey;
+    account.accessTokenEncrypted = this.crypto.encrypt(login.accessToken);
+
+    await this.repo.save(account);
+
+    return {
+      connected: true,
+      gatewayEmail: account.gatewayEmail,
+    };
+  }
+
   async getStatus(userId: string) {
     const account = await this.repo.findOne({ where: { userId } });
 

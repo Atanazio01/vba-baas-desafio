@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ActiveUserId } from '../../shared/decorators/active-user-id.decorator';
 import { ConnectGatewayDto } from './dto/connect-gateway.dto';
 import { RegisterGatewayUserDto } from './dto/register-gateway-user.dto';
@@ -19,6 +19,16 @@ export class GatewayAccountsController {
   @Post('connect')
   connect(@ActiveUserId() userId: string, @Body() dto: ConnectGatewayDto) {
     return this.service.connect(userId, dto);
+  }
+
+  @Post('reconnect')
+  @ApiOperation({
+    summary: 'Renova token Lera de conta já vinculada',
+    description:
+      'Refaz login no gateway com documento/senha e atualiza o access token criptografado.',
+  })
+  reconnect(@ActiveUserId() userId: string, @Body() dto: ConnectGatewayDto) {
+    return this.service.reconnect(userId, dto);
   }
 
   @Get('status')
