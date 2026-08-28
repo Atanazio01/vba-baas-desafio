@@ -16,7 +16,7 @@ export function useGatewayStatus() {
     connected: query.data?.connected ?? false,
     gatewayEmail:
       query.data?.connected === true ? query.data.gatewayEmail : undefined,
-    loading: !!user && query.isLoading,
+    loading: !!user && (query.isLoading || (query.isFetching && !query.data?.connected)),
     refetch: query.refetch,
   }
 }

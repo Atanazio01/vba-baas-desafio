@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext/useAuth'
 import { useErrors } from '../../hooks/useErrors'
+import { useGatewayStatus } from '../../hooks/useGatewayStatus'
 import { gatewayService } from '../../services/gateway/GatewayService'
 import { PersonType } from '../../types/enums'
 import type { RegisterGatewayRequest } from '../../types/gateway'
@@ -30,6 +31,7 @@ const initialForm = (): RegisterGatewayRequest & { password: string } => ({
 
 export function useOnboarding() {
   const { user } = useAuth()
+  const { connected, loading: gatewayLoading } = useGatewayStatus()
   const [step, setStep] = useState<Step>('register')
   const [form, setForm] = useState(() => ({
     ...initialForm(),
@@ -40,6 +42,12 @@ export function useOnboarding() {
   const { error, setFromError, clearError } = useErrors()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+
+  useEffect(() => {
+    if (!gatewayLoading && connected) {
+      navigate(ROUTES.DASHBOARD, { replace: true })
+    }
+  }, [connected, gatewayLoading, navigate])
 
   function updateForm<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -80,12 +88,12 @@ export function useOnboarding() {
     clearError()
     setLoading(true)
     try {
-      await gatewayService.connect({
+      const status = await gatewayService.connect({
         document: form.document,
         password: form.password,
       })
-      await queryClient.invalidateQueries({ queryKey: ['gateway-status'] })
-      navigate(ROUTES.DASHBOARD)
+      queryClient.setQueryData(['gateway-status'], status)
+      navigate(ROUTES.DASHBOARD, { replace: true })
     } catch (err) {
       setFromError(err)
     } finally {
@@ -98,7 +106,7 @@ export function useOnboarding() {
     setStep,
     form,
     updateForm,
-    loading,
+    loading: loading || gatewayLoading,
     error,
     handleRegister,
     handleConnect,
