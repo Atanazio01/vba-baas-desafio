@@ -37,6 +37,15 @@ export class CheckoutLinksService {
     private readonly usersService: UsersService,
   ) {}
 
+  private normalizeQrBase64(value: string | undefined): string | null {
+    if (!value) return null;
+
+    const trimmed = value.trim();
+    const match = /^data:image\/[a-z+]+;base64,(.+)$/i.exec(trimmed);
+
+    return match ? match[1] : trimmed;
+  }
+
   private async mirrorTransaction(params: {
     userId: string;
     orderId: string;
@@ -100,7 +109,7 @@ export class CheckoutLinksService {
     });
 
     const emv = pix.emv ?? pix.copyPaste;
-    const qr = pix.qrCodeBase64 ?? pix.qr_code_base64;
+    const qr = this.normalizeQrBase64(pix.qrCodeBase64 ?? pix.qr_code_base64);
     const gatewayPaymentId = pix.id ?? pix.txid ?? null;
     const gatewayStatus = this.mapGatewayStatus(pix.status);
 
