@@ -21,6 +21,15 @@ class GatewayService {
       .then((r) => r.data)
   }
 
+  reconnect(data: ConnectGatewayRequest) {
+    return http
+      .post<{ connected: true; gatewayEmail: string }>(
+        '/gateway-accounts/reconnect',
+        data,
+      )
+      .then((r) => r.data)
+  }
+
   getStatus() {
     return http
       .get<GatewayStatusResponse>('/gateway-accounts/status')

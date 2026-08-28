@@ -6,6 +6,7 @@ import { ROUTES } from './paths'
 import LoginPage from '../pages/Login'
 import SignupPage from '../pages/Signup'
 import OnboardingPage from '../pages/Onboarding'
+import ReconnectPage from '../pages/Reconnect'
 import DashboardPage from '../pages/Dashboard'
 import PublicCheckoutPage from '../pages/PublicCheckout'
 import NotFoundPage from '../pages/NotFound'
@@ -38,6 +39,7 @@ export function AppRoutes() {
           element={<Navigate to={ROUTES.DASHBOARD} replace />}
         />
         <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
+        <Route path={ROUTES.RECONNECT} element={<ReconnectPage />} />
         <Route element={<GatewayRoute />}>
           <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
         </Route>

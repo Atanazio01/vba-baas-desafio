@@ -3,6 +3,7 @@ export const ROUTES = {
   LOGIN: '/login',
   SIGNUP: '/signup',
   ONBOARDING: '/onboarding',
+  RECONNECT: '/reconnect',
   DASHBOARD: '/dashboard',
   CHECKOUT: '/checkout/:publicId',
   NOT_FOUND: '*',

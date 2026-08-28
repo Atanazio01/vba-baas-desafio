@@ -7,6 +7,7 @@ import { Input } from '../../../../components/atoms/Input'
 import { FormField } from '../../../../components/molecules/FormField'
 import { Modal } from '../../../../components/molecules/Modal'
 import { PixPaymentDetails } from '../../../../components/molecules/PixPaymentDetails'
+import { useAuth } from '../../../../context/AuthContext/useAuth'
 import { useErrors } from '../../../../hooks/useErrors'
 import { checkoutService } from '../../../../services/checkout/CheckoutService'
 import { checkoutPath } from '../../../../routes/paths'
@@ -18,7 +19,6 @@ export function PixLinkForm({ embedded = false }: { embedded?: boolean }) {
   const [amount, setAmount] = useState('')
   const [payerDocument, setPayerDocument] = useState('')
   const [description, setDescription] = useState('')
-  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [createdPix, setCreatedPix] = useState<PixCheckoutResponse | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -29,6 +29,7 @@ export function PixLinkForm({ embedded = false }: { embedded?: boolean }) {
   const [emailSending, setEmailSending] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const { error, setFromError, clearError } = useErrors()
+  const { user } = useAuth()
   const queryClient = useQueryClient()
 
   async function handleSubmit(e: FormEvent) {
@@ -71,11 +72,11 @@ export function PixLinkForm({ embedded = false }: { embedded?: boolean }) {
   }
 
   async function sendEmail() {
-    if (!result || !email) return
+    if (!result || !user?.email) return
     setEmailError(null)
     setEmailSending(true)
     try {
-      await checkoutService.sendEmail(result.publicId, { to: email })
+      await checkoutService.sendEmail(result.publicId, { to: user.email })
       setEmailSent(true)
     } catch (err) {
       setEmailError(getApiErrorMessage(err))
@@ -153,37 +154,20 @@ export function PixLinkForm({ embedded = false }: { embedded?: boolean }) {
                   <Button variant="secondary" onClick={whatsappShare}>
                     WhatsApp
                   </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={sendEmail}
+                    loading={emailSending}
+                    disabled={!user?.email}
+                  >
+                    Enviar para meu e-mail
+                  </Button>
                 </div>
-              </div>
-              <div>
-                <FormField label="Enviar por e-mail" htmlFor="pix-email">
-                  <div className="flex gap-2">
-                    <Input
-                      id="pix-email"
-                      type="email"
-                      placeholder="cliente@email.com"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value)
-                        setEmailSent(false)
-                        setEmailError(null)
-                      }}
-                    />
-                    <Button
-                      variant="secondary"
-                      onClick={sendEmail}
-                      loading={emailSending}
-                      disabled={!email}
-                    >
-                      Enviar
-                    </Button>
-                  </div>
-                </FormField>
                 {emailSent && (
-                  <p className="mt-2 text-sm text-green-600">E-mail enviado com sucesso!</p>
+                  <p className="text-sm text-green-600">E-mail enviado com sucesso!</p>
                 )}
                 {emailError && (
-                  <p className="mt-2 text-sm text-red-600">{emailError}</p>
+                  <p className="text-sm text-red-600">{emailError}</p>
                 )}
               </div>
             </div>

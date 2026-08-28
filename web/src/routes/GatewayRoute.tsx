@@ -1,9 +1,9 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useGatewayStatus } from '../hooks/useGatewayStatus'
+import { useGatewaySession } from '../hooks/useGatewaySession'
 import { ROUTES } from './paths'
 
 export function GatewayRoute() {
-  const { connected, loading } = useGatewayStatus()
+  const { connected, loading, needsReconnect } = useGatewaySession()
 
   if (loading) {
     return (
@@ -15,6 +15,10 @@ export function GatewayRoute() {
 
   if (!connected) {
     return <Navigate to={ROUTES.ONBOARDING} replace />
+  }
+
+  if (needsReconnect) {
+    return <Navigate to={ROUTES.RECONNECT} replace />
   }
 
   return <Outlet />
