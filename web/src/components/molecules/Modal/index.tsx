@@ -23,7 +23,7 @@ export function Modal({ open, onClose, title, children }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-5 sm:p-8"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -34,21 +34,23 @@ export function Modal({ open, onClose, title, children }: Props) {
         aria-label="Fechar modal"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
-            {title}
-          </h2>
-          <button
-            type="button"
-            className="rounded-lg px-2 py-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            aria-label="Fechar"
-            onClick={onClose}
-          >
-            ✕
-          </button>
+      <div className="relative z-10 flex max-h-[min(90dvh,calc(100dvh-2.5rem))] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
+        <div className="shrink-0 border-b border-gray-100 px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
+              {title}
+            </h2>
+            <button
+              type="button"
+              className="rounded-lg px-2 py-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              aria-label="Fechar"
+              onClick={onClose}
+            >
+              ✕
+            </button>
+          </div>
         </div>
-        {children}
+        <div className="overflow-y-auto overscroll-contain px-6 py-6">{children}</div>
       </div>
     </div>
   )
