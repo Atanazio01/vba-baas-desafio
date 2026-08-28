@@ -37,6 +37,27 @@ export class CheckoutLinksService {
     private readonly usersService: UsersService,
   ) {}
 
+  private resolvePixCreateStatus(
+    pix: {
+      status?: string;
+      emv?: string;
+      copyPaste?: string;
+      qrCodeBase64?: string;
+      qr_code_base64?: string;
+    },
+    emv: string | null,
+    qr: string | null,
+  ): PaymentStatus {
+    const mapped = this.mapGatewayStatus(pix.status);
+
+    // Cobrança com QR/copia-e-cola = aguardando pagamento
+    if (emv || qr) {
+      return PaymentStatus.PENDING;
+    }
+
+    return mapped;
+  }
+
   private normalizeQrBase64(value: string | undefined): string | null {
     if (!value) return null;
 
@@ -111,7 +132,7 @@ export class CheckoutLinksService {
     const emv = pix.emv ?? pix.copyPaste;
     const qr = this.normalizeQrBase64(pix.qrCodeBase64 ?? pix.qr_code_base64);
     const gatewayPaymentId = pix.id ?? pix.txid ?? null;
-    const gatewayStatus = this.mapGatewayStatus(pix.status);
+    const gatewayStatus = this.resolvePixCreateStatus(pix, emv ?? null, qr);
 
     link.pixEmv = emv ?? null;
     link.pixQrBase64 = qr ?? null;
