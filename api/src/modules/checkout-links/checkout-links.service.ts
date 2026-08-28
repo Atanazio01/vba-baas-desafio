@@ -50,10 +50,11 @@ export class CheckoutLinksService {
   ): PaymentStatus {
     const mapped = this.mapGatewayStatus(pix.status);
 
-    // Cobrança com QR/copia-e-cola = aguardando pagamento
-    if (emv || qr) {
-      return PaymentStatus.PENDING;
-    }
+    // Se o status do pix for aprovado, retorna o status aprovado
+    if (mapped === PaymentStatus.APPROVED) return mapped;
+
+    // Se o pix tiver emv ou qr, retorna o status pendente
+    if (emv || qr) return PaymentStatus.PENDING;
 
     return mapped;
   }
