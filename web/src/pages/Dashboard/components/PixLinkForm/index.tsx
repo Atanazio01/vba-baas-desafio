@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '../../../../components/atoms/Button'
+import { MoneyInput } from '../../../../components/atoms/MoneyInput'
 import { Input } from '../../../../components/atoms/Input'
 import { FormField } from '../../../../components/molecules/FormField'
 import { Modal } from '../../../../components/molecules/Modal'
@@ -11,8 +12,9 @@ import { checkoutService } from '../../../../services/checkout/CheckoutService'
 import { checkoutPath } from '../../../../routes/paths'
 import type { PixCheckoutResponse } from '../../../../types/checkout'
 import { parseMoneyToCents } from '../../../../utils/formatMoney'
+import { getApiErrorMessage } from '../../../../utils/getApiErrorMessage'
 
-export function PixLinkForm() {
+export function PixLinkForm({ embedded = false }: { embedded?: boolean }) {
   const [amount, setAmount] = useState('')
   const [payerDocument, setPayerDocument] = useState('')
   const [description, setDescription] = useState('')
@@ -24,6 +26,8 @@ export function PixLinkForm() {
     null,
   )
   const [emailSent, setEmailSent] = useState(false)
+  const [emailSending, setEmailSending] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const { error, setFromError, clearError } = useErrors()
   const queryClient = useQueryClient()
 
@@ -31,6 +35,7 @@ export function PixLinkForm() {
     e.preventDefault()
     clearError()
     setEmailSent(false)
+    setEmailError(null)
     setLoading(true)
     try {
       const data = await checkoutService.createPix({
@@ -67,28 +72,26 @@ export function PixLinkForm() {
 
   async function sendEmail() {
     if (!result || !email) return
-    setLoading(true)
+    setEmailError(null)
+    setEmailSending(true)
     try {
       await checkoutService.sendEmail(result.publicId, { to: email })
       setEmailSent(true)
     } catch (err) {
-      setFromError(err)
+      setEmailError(getApiErrorMessage(err))
     } finally {
-      setLoading(false)
+      setEmailSending(false)
     }
   }
 
-  return (
+  const form = (
     <>
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Novo link Pix</h2>
         <form onSubmit={handleSubmit}>
-          <FormField label="Valor (R$)" htmlFor="amount">
-            <Input
+          <FormField label="Valor" htmlFor="amount">
+            <MoneyInput
               id="amount"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="10,00"
+              onChange={setAmount}
               required
             />
           </FormField>
@@ -112,30 +115,19 @@ export function PixLinkForm() {
             Gerar link
           </Button>
         </form>
+    </>
+  )
 
-        {result && (
-          <div className="mt-6 space-y-3 rounded-lg bg-gray-50 p-4">
-            <p className="break-all text-sm text-gray-700">{result.url}</p>
-            <Button variant="secondary" onClick={() => setModalOpen(true)}>
-              Ver QR code
-            </Button>
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="E-mail do cliente"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <Button variant="secondary" onClick={sendEmail} loading={loading}>
-                Enviar e-mail
-              </Button>
-            </div>
-            {emailSent && (
-              <p className="text-sm text-green-600">E-mail enviado com sucesso!</p>
-            )}
-          </div>
-        )}
-      </div>
+  return (
+    <>
+      {embedded ? (
+        form
+      ) : (
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">Novo link Pix</h2>
+          {form}
+        </div>
+      )}
 
       {createdPix && (
         <Modal
@@ -151,17 +143,50 @@ export function PixLinkForm() {
             onCopyEmv={copyEmv}
           />
           {result && (
-            <>
-              <p className="mt-4 break-all text-xs text-gray-500">{result.url}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={copyLink}>
-                  Copiar link
-                </Button>
-                <Button variant="secondary" onClick={whatsappShare}>
-                  WhatsApp
-                </Button>
+            <div className="mt-6 space-y-5 border-t border-gray-100 pt-6">
+              <div className="space-y-3">
+                <p className="break-all text-xs text-gray-500">{result.url}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={copyLink}>
+                    Copiar link
+                  </Button>
+                  <Button variant="secondary" onClick={whatsappShare}>
+                    WhatsApp
+                  </Button>
+                </div>
               </div>
-            </>
+              <div>
+                <FormField label="Enviar por e-mail" htmlFor="pix-email">
+                  <div className="flex gap-2">
+                    <Input
+                      id="pix-email"
+                      type="email"
+                      placeholder="cliente@email.com"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value)
+                        setEmailSent(false)
+                        setEmailError(null)
+                      }}
+                    />
+                    <Button
+                      variant="secondary"
+                      onClick={sendEmail}
+                      loading={emailSending}
+                      disabled={!email}
+                    >
+                      Enviar
+                    </Button>
+                  </div>
+                </FormField>
+                {emailSent && (
+                  <p className="mt-2 text-sm text-green-600">E-mail enviado com sucesso!</p>
+                )}
+                {emailError && (
+                  <p className="mt-2 text-sm text-red-600">{emailError}</p>
+                )}
+              </div>
+            </div>
           )}
         </Modal>
       )}
