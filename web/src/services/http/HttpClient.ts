@@ -1,50 +1,48 @@
-import axios, { type AxiosError } from 'axios'
-import { ApiError } from '../../errors/ApiError'
-import { clearToken, getToken } from '../../utils/storage'
+import axios, { type AxiosError } from "axios";
+import { ApiError } from "../../errors/ApiError";
+import { isGatewayReconnectError } from '../../utils/isLeraTokenError';
+import { clearToken, getToken } from "../../utils/storage";
 import {
   isAuthAttemptRequest,
-  isSessionExpiredRequest,
-  notifySessionExpired,
-} from './session'
+  notifySessionExpired
+} from "./session";
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export const http = axios.create({
   baseURL: API_URL,
-  headers: { Accept: 'application/json' },
-})
+  headers: { Accept: "application/json" },
+});
 
 http.interceptors.request.use((config) => {
-  const token = getToken()
+  const token = getToken();
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return config
-})
+  return config;
+});
 
 http.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ message?: string | string[] }>) => {
-    const url = error.config?.url
-    const status = error.response?.status
+    const url = error.config?.url;
+    const status = error.response?.status;
 
+    const message = error.response?.data?.message;
+    const text = Array.isArray(message)
+      ? message.join(", ")
+      : (message ?? error.message);
     if (
       status === 401 &&
       getToken() &&
       !isAuthAttemptRequest(url) &&
-      isSessionExpiredRequest(url)
+      !isGatewayReconnectError(new ApiError(text, 401))
     ) {
-      clearToken()
-      notifySessionExpired()
+      clearToken();
+      notifySessionExpired();
     }
-
-    const message = error.response?.data?.message
-    const text = Array.isArray(message)
-      ? message.join(', ')
-      : (message ?? error.message)
-
-    throw new ApiError(text, status ?? 500)
+    throw new ApiError(text, status ?? 500);
   },
-)
+);
 
-export { API_URL }
+export { API_URL };

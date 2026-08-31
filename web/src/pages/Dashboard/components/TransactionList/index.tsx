@@ -1,15 +1,18 @@
-import { useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import type { PaymentStatus, WalletTransactionType } from '../../../../types/enums'
-import { StatusBadge } from '../../../../components/molecules/StatusBadge'
-import { Spinner } from '../../../../components/atoms/Spinner'
-import { useAuth } from '../../../../context/AuthContext/useAuth'
-import { walletService } from '../../../../services/wallet/WalletService'
-import { getApiErrorMessage } from '../../../../utils/getApiErrorMessage'
-import { walletTransactionTypeLabels } from '../../../../utils/transactionLabels'
+import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Spinner } from '../../../../components/atoms/Spinner';
+import { StatusBadge } from '../../../../components/molecules/StatusBadge';
+import { useAuth } from '../../../../context/AuthContext/useAuth';
+import { ROUTES } from '../../../../routes/paths';
+import { walletService } from '../../../../services/wallet/WalletService';
+import type { PaymentStatus, WalletTransactionType } from '../../../../types/enums';
+import { getApiErrorMessage } from '../../../../utils/getApiErrorMessage';
+import { isGatewayReconnectError } from '../../../../utils/isLeraTokenError';
 import {
   getTransactionAmountDisplay,
-} from '../../../../utils/transactionAmount'
+} from '../../../../utils/transactionAmount';
+import { walletTransactionTypeLabels } from '../../../../utils/transactionLabels';
 
 type Props = {
   status: PaymentStatus | ''
@@ -46,11 +49,23 @@ export function TransactionList({ status, type, onCountChange }: Props) {
   }
 
   if (error) {
+      const needsReconnect = isGatewayReconnectError(error)
+  
     return (
-      <div className="flex min-h-48 items-center justify-center px-4">
+      <div className="flex min-h-48 flex-col items-center justify-center gap-3 px-4">
         <p className="text-center text-sm text-red-600">
-          Erro ao carregar transações: {getApiErrorMessage(error)}
+          {needsReconnect
+            ? 'Não foi possível carregar o extrato. Reconecte sua conta Lera.'
+            : `Erro ao carregar transações: ${getApiErrorMessage(error)}`}
         </p>
+        {needsReconnect && (
+          <Link
+            to={ROUTES.RECONNECT}
+            className="text-sm font-semibold text-green-600 underline"
+          >
+            Reconectar conta Lera
+          </Link>
+        )}
       </div>
     )
   }

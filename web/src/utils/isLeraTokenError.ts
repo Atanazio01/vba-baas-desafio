@@ -1,9 +1,11 @@
-import { ApiError } from '../errors/ApiError'
+import { ApiError } from '../errors/ApiError';
 
-export function isLeraTokenError(error: unknown): boolean {
-  return (
-    error instanceof ApiError &&
-    error.status === 401 &&
-    /token inválido|expirado/i.test(error.message)
-  )
+const GATEWAY_RECONNECT_MESSAGE =
+  /GATEWAY_RECONNECT_REQUIRED|reconecte|sessão lera|token inválido|expirado/i
+
+export function isGatewayReconnectError(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false
+  return GATEWAY_RECONNECT_MESSAGE.test(error.message)
 }
+
+export const isLeraTokenError = isGatewayReconnectError

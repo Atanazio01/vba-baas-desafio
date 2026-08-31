@@ -3,6 +3,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -96,12 +97,17 @@ export class GatewayAccountsService {
 
   async getDecryptedToken(userId: string): Promise<string> {
     const account = await this.repo.findOne({ where: { userId } });
-
     if (!account) {
       throw new NotFoundException('Gateway account not connected');
     }
-
-    return this.crypto.decrypt(account.accessTokenEncrypted);
+    try {
+      return this.crypto.decrypt(account.accessTokenEncrypted);
+    } catch (err) {
+      this.logger.warn('Failed to decrypt access token', err);
+      throw new UnauthorizedException(
+        'Sessão Lera inválida. Reconecte sua conta.',
+      );
+    }
   }
 
   private async registerDefaultWebhooks(accessToken: string): Promise<void> {

@@ -369,9 +369,15 @@ export class GatewayHttpClient {
       const message = Array.isArray(rawMessage)
         ? rawMessage.join(', ')
         : (rawMessage ?? error.message ?? 'Gateway request failed');
+
       if (status === 401 || status === 403) {
-        throw new UnauthorizedException(message);
+        throw new UnauthorizedException(
+          /token inválido|expirado|sessão lera/i.test(message)
+            ? message
+            : 'GATEWAY_RECONNECT_REQUIRED',
+        );
       }
+
       if (status === 409) {
         throw new ConflictException(message);
       }
