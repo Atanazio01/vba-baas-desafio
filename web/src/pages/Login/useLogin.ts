@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '../../context/AuthContext/useAuth'
-import { useErrors } from '../../hooks/useErrors'
-import { gatewayService } from '../../services/gateway/GatewayService'
-import { ROUTES } from '../../routes/paths'
+import { useQueryClient } from '@tanstack/react-query';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext/useAuth';
+import { useErrors } from '../../hooks/useErrors';
+import { ROUTES } from '../../routes/paths';
+import { gatewayService } from '../../services/gateway/GatewayService';
 
 export function useLogin() {
   const [email, setEmail] = useState('')

@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
-import { useErrors } from '../../hooks/useErrors'
-import { gatewayService } from '../../services/gateway/GatewayService'
-import { ROUTES } from '../../routes/paths'
+import { useQueryClient } from '@tanstack/react-query';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useErrors } from '../../hooks/useErrors';
+import { ROUTES } from '../../routes/paths';
+import { gatewayService } from '../../services/gateway/GatewayService';
 
 export function useReconnect() {
   const [document, setDocument] = useState('')
@@ -21,7 +21,6 @@ export function useReconnect() {
     try {
       const status = await gatewayService.reconnect({ document, password })
       queryClient.setQueryData(['gateway-status'], status)
-      await queryClient.invalidateQueries({ queryKey: ['wallet-probe'] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-balance'] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] })
       navigate(ROUTES.DASHBOARD, { replace: true })

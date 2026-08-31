@@ -1,8 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
-import { Spinner } from '../../../../components/atoms/Spinner'
-import { useAuth } from '../../../../context/AuthContext/useAuth'
-import { walletService } from '../../../../services/wallet/WalletService'
-import { getApiErrorMessage } from '../../../../utils/getApiErrorMessage'
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { Spinner } from '../../../../components/atoms/Spinner';
+import { useAuth } from '../../../../context/AuthContext/useAuth';
+import { ROUTES } from '../../../../routes/paths';
+import { walletService } from '../../../../services/wallet/WalletService';
+import { getApiErrorMessage } from '../../../../utils/getApiErrorMessage';
+import { isGatewayReconnectError } from '../../../../utils/isLeraTokenError';
 
 export function BalanceCard() {
   const { user } = useAuth()
@@ -22,10 +25,20 @@ export function BalanceCard() {
   }
 
   if (error) {
+    const needsReconnect = isGatewayReconnectError(error)
+    console.log('needsReconnect', needsReconnect)
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
         <p className="text-sm font-medium">Erro ao carregar saldo.</p>
         <p className="mt-1 text-sm">{getApiErrorMessage(error)}</p>
+        {needsReconnect && (
+          <Link
+            to={ROUTES.RECONNECT}
+            className="mt-4 inline-block text-sm font-semibold text-green-700 underline"
+          >
+            Reconectar conta Lera
+          </Link>
+        )}
       </div>
     )
   }

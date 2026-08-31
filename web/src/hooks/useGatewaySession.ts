@@ -7,14 +7,14 @@ export function useGatewaySession() {
   const { connected, loading: statusLoading } = useGatewayStatus()
 
   const probe = useQuery({
-    queryKey: ['wallet-probe'],
+    queryKey: ['wallet-balance'],
     queryFn: () => walletService.getBalance(),
     enabled: connected,
     retry: (_, error) => !isGatewayReconnectError(error),
   })
 
   const loading =
-    statusLoading || (connected && (probe.isLoading || probe.isFetching))
+  statusLoading || (connected && probe.isLoading)
 
   const needsReconnect =
     connected && probe.isError && isGatewayReconnectError(probe.error)
